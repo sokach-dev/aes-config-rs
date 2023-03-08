@@ -4,12 +4,16 @@ use clap::{Parser, Subcommand};
 #[derive(Debug, Parser)]
 #[clap(version = "1.0", author = "sokach")]
 struct Cli {
+    /// the config file path
     #[clap(short, long)]
     path: String,
+    /// you want encrypt or decrypt with salt, that must 32bytes
     #[clap(short, long)]
     salt: Option<String>,
+    /// it is one of 'toml' or 'json' or 'ini'
     #[clap(short, long)]
     file_type: ConfigType,
+    /// encrypt of decrypt file path
     #[clap(short, long)]
     new_file_path: String,
 
