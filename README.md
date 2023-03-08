@@ -23,7 +23,7 @@ export AES_CONFIG_KEY=abcdefghijklmnopqrstuvwxyz123456
 ./target/release/config_cli  -p encrypt_config.toml -n encrypt_config.plain.toml  -f toml decrypt
 ```
 
-### crate
+### as crate
 
 ```rust
 use aes_config::ConfigType;
