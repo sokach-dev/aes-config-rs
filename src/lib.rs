@@ -2,6 +2,8 @@ use aes_gcm::{
     aead::{generic_array::GenericArray, Aead, KeyInit},
     Aes256Gcm, Nonce,
 };
+use base64::engine::general_purpose;
+use base64::Engine;
 use serde::de::DeserializeOwned;
 use std::{fmt::Debug, str::FromStr, string::FromUtf8Error};
 
@@ -24,6 +26,9 @@ pub enum ConfigError {
 
     #[error("salt need 32 bity")]
     SaltLenError,
+
+    #[error("base64 decode error")]
+    Base64Error(#[from] base64::DecodeError),
 }
 
 impl From<aes_gcm::aead::Error> for ConfigError {
@@ -85,7 +90,7 @@ impl ConfigInfo {
         let mut config_string = std::fs::read_to_string(self.path)?;
         if let Some(salt) = self.salt {
             let salt = salt.as_bytes().try_into().unwrap();
-            let plain = decrypt_config(config_string.as_bytes(), salt)?;
+            let plain = decrypt_config(config_string, salt)?;
             config_string = String::from_utf8(plain)?;
         }
 
@@ -103,8 +108,7 @@ impl ConfigInfo {
         }
     }
 
-    // 返回新加密文件的路径
-    pub fn try_encrypt_config(self) -> Result<Vec<u8>, ConfigError> {
+    pub fn try_encrypt_config(self) -> Result<String, ConfigError> {
         let config_string = std::fs::read_to_string(self.path)?;
         if let Some(salt) = self.salt {
             let salt = salt.as_bytes().try_into().unwrap();
@@ -115,17 +119,18 @@ impl ConfigInfo {
     }
 }
 
-fn encrypt_config(config: &[u8], key: &[u8; 32]) -> Result<Vec<u8>, ConfigError> {
+fn encrypt_config(config: &[u8], key: &[u8; 32]) -> Result<String, ConfigError> {
     let key = GenericArray::from_slice(key);
     let nonce = Nonce::from_slice(&FIXED_NONCE);
     let cipher = Aes256Gcm::new(key).encrypt(nonce, config)?;
-    Ok(cipher)
+    Ok(general_purpose::STANDARD.encode(cipher))
 }
 
-fn decrypt_config(cipher: &[u8], key: &[u8; 32]) -> Result<Vec<u8>, ConfigError> {
+fn decrypt_config(cipher: String, key: &[u8; 32]) -> Result<Vec<u8>, ConfigError> {
+    let cipher = general_purpose::STANDARD.decode(cipher)?;
     let key = GenericArray::from_slice(key);
     let nonce = Nonce::from_slice(&FIXED_NONCE);
-    let plain = Aes256Gcm::new(key).decrypt(nonce, cipher)?;
+    let plain = Aes256Gcm::new(key).decrypt(nonce, cipher.as_slice())?;
     Ok(plain)
 }
 
@@ -138,7 +143,7 @@ mod tests {
         let config = "hello world";
         let key = [0u8; 32];
         let cipher = encrypt_config(config.as_bytes(), &key).unwrap();
-        let plain = decrypt_config(cipher.as_slice(), &key).unwrap();
+        let plain = decrypt_config(cipher, &key).unwrap();
         assert_eq!(config.as_bytes(), plain.as_slice());
         assert_eq!(config, String::from_utf8(plain).unwrap());
     }
