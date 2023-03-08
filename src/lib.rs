@@ -70,12 +70,19 @@ impl FromStr for ConfigType {
 impl ConfigInfo {
     pub fn new(
         path: String,
-        salt: Option<String>,
+        mut salt: Option<String>,
         file_type: ConfigType,
     ) -> Result<Self, ConfigError> {
         if let Some(key) = salt.clone() {
             if key.len() != 32 {
                 return Err(ConfigError::SaltLenError);
+            }
+        } else {
+            if let Ok(key) = std::env::var("AES_CONFIG_KEY") {
+                if key.len() != 32 {
+                    return Err(ConfigError::SaltLenError);
+                }
+                salt = Some(key);
             }
         }
 

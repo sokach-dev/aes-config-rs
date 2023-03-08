@@ -1,4 +1,3 @@
 /target
 config.toml
-encrypt_config.plain.toml
-encrypt_config.toml
+encrypt_config*

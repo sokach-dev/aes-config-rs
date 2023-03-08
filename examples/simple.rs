@@ -8,7 +8,22 @@ struct Config {
     name: String,
 }
 
+/*
+config.toml file:
+port=10086
+name="test"
+
+encrypt_config.toml file:
+qOOX56hXnadNC5uHU36IgB1i/2OKgfgXz4PmDYmy683qUewVqsg=
+*/
+
 fn main() {
-    let c = aes_config::ConfigInfo::new("config.toml".to_string(), None, ConfigType::TOML).unwrap();
+    let salt = "abcdefghijklmnopqrstuvwxyz123456".to_string();
+    let c = aes_config::ConfigInfo::new(
+        "examples/encrypt_config.toml".to_string(),
+        Some(salt),
+        ConfigType::TOML,
+    )
+    .unwrap();
     println!("{:#?}", c.try_get_config::<Config>().unwrap());
 }
