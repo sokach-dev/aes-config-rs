@@ -1,6 +1,5 @@
 use aes_config::{ConfigInfo, ConfigType};
 use clap::{Parser, Subcommand};
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Parser)]
 #[clap(version = "1.0", author = "sokach")]
@@ -24,12 +23,6 @@ enum Command {
     Decrypt,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
-struct Config {
-    port: u16,
-    name: String,
-}
-
 fn main() {
     let cli = Cli::parse();
 
@@ -42,9 +35,8 @@ fn main() {
         }
         Command::Decrypt => {
             let config_info = ConfigInfo::new(cli.path, cli.salt, cli.file_type).unwrap();
-            let plain = config_info.try_get_config::<Config>().unwrap();
-            let pretty = toml::to_string_pretty(&plain).unwrap();
-            std::fs::write(cli.new_file_path, pretty).unwrap();
+            let plain = config_info.try_decrypt_config().unwrap();
+            std::fs::write(cli.new_file_path, plain).unwrap();
             return;
         }
     }

@@ -86,13 +86,8 @@ impl ConfigInfo {
         })
     }
 
-    pub fn try_get_config<T: DeserializeOwned>(self) -> Result<T, ConfigError> {
-        let mut config_string = std::fs::read_to_string(self.path)?;
-        if let Some(salt) = self.salt {
-            let salt = salt.as_bytes().try_into().unwrap();
-            let plain = decrypt_config(config_string, salt)?;
-            config_string = String::from_utf8(plain)?;
-        }
+    pub fn try_get_config<T: DeserializeOwned>(&self) -> Result<T, ConfigError> {
+        let config_string = self.try_decrypt_config()?;
 
         match self.file_type {
             ConfigType::TOML => {
@@ -108,13 +103,25 @@ impl ConfigInfo {
         }
     }
 
-    pub fn try_encrypt_config(self) -> Result<String, ConfigError> {
-        let config_string = std::fs::read_to_string(self.path)?;
-        if let Some(salt) = self.salt {
+    pub fn try_encrypt_config(&self) -> Result<String, ConfigError> {
+        let config_string = std::fs::read_to_string(&self.path)?;
+        if let Some(salt) = &self.salt {
             let salt = salt.as_bytes().try_into().unwrap();
             return encrypt_config(config_string.as_bytes(), salt);
         } else {
             return Err(ConfigError::SaltLenError);
+        }
+    }
+
+    pub fn try_decrypt_config(&self) -> Result<String, ConfigError> {
+        let config_string = std::fs::read_to_string(&self.path)?;
+        if let Some(salt) = &self.salt {
+            let salt = salt.as_bytes().try_into().unwrap();
+            let plain = decrypt_config(config_string, salt)?;
+            let config_string = String::from_utf8(plain)?;
+            return Ok(config_string);
+        } else {
+            return Ok(config_string);
         }
     }
 }
