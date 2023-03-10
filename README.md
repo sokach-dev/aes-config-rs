@@ -1,6 +1,6 @@
 # aes-config-rs
 
-The rust project config with aes encrypt function.
+The Rust project is configured with an AES encryption function.
 
 ## usage
 
